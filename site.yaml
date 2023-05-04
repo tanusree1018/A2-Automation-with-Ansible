@@ -1,0 +1,63 @@
+---
+- hosts: webservers
+  become: true
+  become_method: sudo
+  gather_facts: true
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: true
+   
+    - name: Installing pip3
+      apt:
+       name: python3-pip
+       state: latest
+       update_cache: true
+
+    - name: Installing flask
+      pip:
+        executable: pip3
+        name: flask
+        state: latest
+
+    - name: Installing Gunicorn
+      apt:
+        name: gunicorn
+
+    - name: Copy App.py
+      copy:
+        src: haproxy.cfg
+        dest: /home/ubuntu/app.py
+        owner: ubuntu
+        mode: '0644'
+    
+    - name: Running Flask application
+      shell: gunicorn -w 2 -D -b 0.0.0.0:8080 app:app
+
+
+# haproxy configuration
+- hosts: all
+  gather_facts: true
+- hosts: HAproxy
+  become: true
+  
+  tasks:
+
+    - name: apt update
+      apt:
+        update_cache: yes
+    
+    - name: Installing HAPROXY
+      apt:
+        name: haproxy
+        state: present
+
+    - name: Configure haproxy
+      template:
+        src: haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+    
+    - name: Restart haproxy
+      service:
+        name: haproxy
+        state: restarted
