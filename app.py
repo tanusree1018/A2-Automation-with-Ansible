@@ -13,4 +13,4 @@ def index():
     return Time+" Serving from "+h_name+" ("+IP_addres+")\n"
 
 if __name__ == "__main__":
-    app.run(hosts="0.0.0.0",debug=True)
+    app.run(hosts="0.0.0.0",port=8080,debug=True)
