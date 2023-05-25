@@ -24,15 +24,41 @@
       apt:
         name: gunicorn
 
-    - name: Copy App.py
+    - name: Installing SNMP
+      apt:
+        name: snmp
+        state: latest
+
+    - name: Install snmp-mibs-downloader
+      apt:
+        name: snmp-mibs-downloader
+        state: latest
+
+    - name: Installing snmpd
+      apt:
+        name: snmpd
+        state: latest
+    
+    - name: Copy the config file of snmpd 
+      template:
+         src: /$PWD/snmpd.conf
+         dest: /etc/snmp/snmpd.conf
+    
+    - name: Restarting snmpd
+      service:
+         name: snmpd
+         state: restarted
+         enabled: yes
+
+    - name: Copy Application2.py
       copy:
-        src: app.py
-        dest: /home/ubuntu/app.py
+        src: /$PWD/application2.py
+        dest: /home/ubuntu/application2.py
         owner: ubuntu
         mode: '0644'
     
     - name: Running Flask application
-      shell: gunicorn -w 2 -D -b 0.0.0.0:8080 app:app
+      shell: gunicorn -w 2 -D -b 0.0.0.0:8080 application2:app
 
 
 # haproxy configuration
@@ -54,10 +80,48 @@
 
     - name: Configure haproxy
       template:
-        src: haproxy.cfg.j2
+        src: /$PWD/haproxy.cfg.j2
         dest: /etc/haproxy/haproxy.cfg
     
     - name: Restart haproxy
       service:
         name: haproxy
         state: restarted
+
+    - name: Installing Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Configure Nginx
+      template:
+        src: /$PWD/udp_loadbalancer.conf.j2
+        dest: /etc/nginx/nginx.conf
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Installing SNMP
+      apt: 
+        name: snmp 
+        state: latest
+
+    - name: snmp request 1
+      shell:  "snmpwalk -t 1 -r 1 -v2c -c public localhost:1611 iso.3.6.1.2.1.1.1.0"
+      register: "output"
+    - debug: var=output.stdout_lines
+
+    - name: snmp request 2
+      shell:  "snmpwalk -t 1 -r 1 -v2c -c public localhost:1611 iso.3.6.1.2.1.1.1.0"
+      register: "output"
+    - debug: var=output.stdout_lines
+
+    - name: snmp request 3
+      shell:  "snmpwalk -t 1 -r 1 -v2c -c public localhost:1611 iso.3.6.1.2.1.1.1.0"
+      register: "output"
+    - debug: var=output.stdout_lines    
+
+
+  
